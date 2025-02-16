@@ -1,0 +1,172 @@
+import { inject, injectable } from 'tsyringe';
+import { RentRepository } from '../repositories';
+import { CreateRentDto, UpdateRentDto } from '../dtos';
+import {
+    BadRequestError,
+    ForbiddenError,
+    GeneralError,
+    InternalServerError,
+    NotFoundError,
+} from '../../../utils/http-error.util';
+import logger from '../../../utils/logger.util';
+import { RentStatus } from '../enums';
+import { generateCode } from '../../../utils/general.utils';
+import { EmailService } from '../../internal/emails/services';
+import { LockerService } from '../../lockers/services';
+import { LockerStatus } from '../../lockers/enums';
+
+@injectable()
+export class RentService {
+    constructor(
+        @inject(RentRepository) private rentRepository: RentRepository,
+        @inject(EmailService) private readonly emailService: EmailService,
+        @inject(LockerService) private readonly lockerService: LockerService
+    ) {}
+
+    async createRent(createRentDto: CreateRentDto) {
+        try {
+            return await this.rentRepository.createRent(createRentDto);
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error creating rent: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async findRentById(id: string) {
+        try {
+            const rent = await this.rentRepository.findById(id);
+
+            if (!rent) {
+                throw new NotFoundError('Rent not found');
+            }
+
+            return rent;
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error finding rent: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async findAllRents() {
+        try {
+            return await this.rentRepository.findAll();
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error finding rents: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async findRentsByLockerId(lockerId: string) {
+        try {
+            await this.lockerService.findLockerById(lockerId);
+
+            return await this.rentRepository.findByLockerId(lockerId);
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error finding rents: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async updateRent(id: string, updateRentDto: UpdateRentDto) {
+        try {
+            if (updateRentDto.lockerId) {
+                const locker = await this.lockerService.findLockerById(updateRentDto.lockerId);
+
+                if (locker.isOccupied) {
+                    throw new BadRequestError('Locker is already occupied');
+                }
+
+                if (locker.status !== LockerStatus.OPEN) {
+                    throw new BadRequestError('Locker is not open');
+                }
+            }
+
+            return await this.rentRepository.updateRent(id, updateRentDto);
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error updating rent: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async setLockerId(id: string, lockerId: string) {
+        try {
+            await this.findRentById(id);
+            const locker = await this.lockerService.findLockerById(lockerId);
+
+            if (locker.isOccupied) {
+                throw new BadRequestError('Locker is already occupied');
+            }
+
+            if (locker.status !== LockerStatus.OPEN) {
+                throw new BadRequestError('Locker is not open');
+            }
+
+            return await this.rentRepository.setLockerId(id, lockerId);
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error setting locker id: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async dropoffRent(id: string) {
+        try {
+            const rent = await this.findRentById(id);
+
+            if (!rent.lockerId) {
+                throw new BadRequestError('Rent does not have a locker assigned');
+            }
+
+            if (rent.status !== RentStatus.WAITING_DROPOFF) {
+                throw new ForbiddenError('Rent is not in drop off status');
+            }
+
+            const randomCode = generateCode();
+            await this.rentRepository.dropoffRent(id, randomCode);
+
+            await this.lockerService.updateLocker(rent.lockerId, { isOccupied: true, status: LockerStatus.CLOSED });
+
+            await this.emailService.sendRentDropoffEmail(rent.receiverEmail, rent.lockerId, randomCode);
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error dropping off rent: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async pickupRent(id: string, code: string) {
+        try {
+            const rent = await this.findRentById(id);
+
+            if (!rent.lockerId) {
+                throw new BadRequestError('Rent does not have a locker assigned');
+            }
+
+            if (rent.status !== RentStatus.WAITING_PICKUP) {
+                throw new ForbiddenError('Rent is not in pickup status');
+            }
+
+            this.validateRentCode(rent.code, code);
+            await this.rentRepository.pickupRent(id);
+
+            await this.lockerService.updateLocker(rent.lockerId, { isOccupied: false, status: LockerStatus.OPEN });
+
+            await this.emailService.notifyRentDelivered(rent.senderEmail, code);
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error picking up rent: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    private validateRentCode(rentCode: string, code: string) {
+        if (rentCode !== code) {
+            throw new ForbiddenError('Invalid code');
+        }
+    }
+}
