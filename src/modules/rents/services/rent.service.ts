@@ -1,6 +1,6 @@
-import {inject, injectable} from 'tsyringe';
-import {RentRepository} from '../repositories';
-import {CreateRentDto, UpdateRentDto} from '../dtos';
+import { inject, injectable } from 'tsyringe';
+import { RentRepository } from '../repositories';
+import { CreateRentDto, UpdateRentDto } from '../dtos';
 import {
     BadRequestError,
     ForbiddenError,
@@ -9,13 +9,13 @@ import {
     NotFoundError,
 } from '../../../utils/http-error.util';
 import logger from '../../../utils/logger.util';
-import {RentStatus} from '../enums';
-import {generateCode} from '../../../utils/general.utils';
-import {EmailService} from '../../internal/emails/services';
-import {LockerService} from '../../lockers/services';
-import {LockerStatus} from '../../lockers/enums';
-import {UserFromRequest} from "../../general/interfaces";
-import {UserRole} from "../../users/enums";
+import { RentStatus } from '../enums';
+import { generateCode } from '../../../utils/general.utils';
+import { EmailService } from '../../internal/emails/services';
+import { LockerService } from '../../lockers/services';
+import { LockerStatus } from '../../lockers/enums';
+import { UserFromRequest } from '../../general/interfaces';
+import { UserRole } from '../../users/enums';
 
 @injectable()
 export class RentService {

@@ -151,12 +151,7 @@ export class RentController {
     @Patch('/{id}/pickup')
     @SuccessResponse(StatusCodes.NO_CONTENT, 'Rent Updated')
     @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
-    public async pickupRent(
-        id: string,
-        code: string,
-        @Inject() response,
-        @Inject() next: NextFunction
-    ): Promise<void> {
+    public async pickupRent(id: string, code: string, @Inject() response, @Inject() next: NextFunction): Promise<void> {
         try {
             logger.info(`Picking up rent with id: ${id}`);
             await this.rentService.pickupRent(id, code);
