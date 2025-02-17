@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import { CreateRentDto, SetRentLockerDto, UpdateRentDto } from '../dtos';
 import { NextFunction } from 'express';
 import logger from '../../../utils/logger.util';
+import { CustomRequest } from '../../general/interfaces';
 
 @Route('rents')
 @Tags('Rents')
@@ -50,10 +51,16 @@ export class RentController {
     @Get('/{id}')
     @SuccessResponse(StatusCodes.OK, 'Rent Found')
     @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
-    public async findRentById(id: string, @Inject() response, @Inject() next: NextFunction): Promise<void> {
+    public async findRentById(
+        id: string,
+        @Inject() request: CustomRequest,
+        @Inject() response,
+        @Inject() next: NextFunction
+    ): Promise<void> {
         try {
             logger.info(`Finding rent with id: ${id}`);
-            const rent = await this.rentService.findRentById(id);
+            const user = request.user;
+            const rent = await this.rentService.findRentById(id, user);
 
             response.status(StatusCodes.OK).json(rent);
         } catch (internalError) {
@@ -85,12 +92,14 @@ export class RentController {
     public async updateRent(
         id: string,
         @Body() rentData: UpdateRentDto,
+        @Inject() request: CustomRequest,
         @Inject() response,
         @Inject() next: NextFunction
     ): Promise<void> {
         try {
             logger.info(`Updating rent with id: ${id}`);
-            const rent = await this.rentService.updateRent(id, rentData);
+            const user = request.user;
+            const rent = await this.rentService.updateRent(id, rentData, user);
 
             response.status(StatusCodes.OK).json(rent);
         } catch (internalError) {
@@ -104,12 +113,14 @@ export class RentController {
     public async setLockerId(
         id: string,
         @Body() rentLocker: SetRentLockerDto,
+        @Inject() request: CustomRequest,
         @Inject() response,
         @Inject() next: NextFunction
     ): Promise<void> {
         try {
             logger.info(`Setting locker id for rent with id: ${id}`);
-            await this.rentService.setLockerId(id, rentLocker.lockerId);
+            const user = request.user;
+            await this.rentService.setLockerId(id, rentLocker.lockerId, user);
 
             response.status(StatusCodes.NO_CONTENT).send();
         } catch (internalError) {
@@ -120,10 +131,16 @@ export class RentController {
     @Patch('/{id}/dropoff')
     @SuccessResponse(StatusCodes.NO_CONTENT, 'Rent Updated')
     @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
-    public async dropoffRent(id: string, @Inject() response, @Inject() next: NextFunction): Promise<void> {
+    public async dropoffRent(
+        id: string,
+        @Inject() request: CustomRequest,
+        @Inject() response,
+        @Inject() next: NextFunction
+    ): Promise<void> {
         try {
             logger.info(`Dropping off rent with id: ${id}`);
-            await this.rentService.dropoffRent(id);
+            const user = request.user;
+            await this.rentService.dropoffRent(id, user);
 
             response.status(StatusCodes.NO_CONTENT).send();
         } catch (internalError) {
@@ -134,7 +151,12 @@ export class RentController {
     @Patch('/{id}/pickup')
     @SuccessResponse(StatusCodes.NO_CONTENT, 'Rent Updated')
     @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
-    public async pickupRent(id: string, code: string, @Inject() response, @Inject() next: NextFunction): Promise<void> {
+    public async pickupRent(
+        id: string,
+        code: string,
+        @Inject() response,
+        @Inject() next: NextFunction
+    ): Promise<void> {
         try {
             logger.info(`Picking up rent with id: ${id}`);
             await this.rentService.pickupRent(id, code);

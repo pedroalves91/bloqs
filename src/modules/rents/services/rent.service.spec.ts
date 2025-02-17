@@ -143,6 +143,18 @@ describe('RentService', () => {
 
     describe('updateRent', () => {
         it('should update a rent', async () => {
+            const rent: Rent = {
+                lockerId: '456',
+                weight: 7,
+                size: RentSize.M,
+                status: RentStatus.WAITING_DROPOFF,
+                senderEmail: 'send@mail.com',
+                receiverEmail: 'receiver@mail.com',
+                code: '123',
+            };
+
+            rentRepositoryMock.findById.mockResolvedValue(rent);
+
             const updateRentDto: UpdateRentDto = {
                 lockerId: '456',
                 weight: 7,
@@ -165,6 +177,18 @@ describe('RentService', () => {
         });
 
         it('should throw an error if the rent update fails', async () => {
+            const rent: Rent = {
+                lockerId: '456',
+                weight: 7,
+                size: RentSize.M,
+                status: RentStatus.WAITING_DROPOFF,
+                senderEmail: 'send@mail.com',
+                receiverEmail: 'receiver@mail.com',
+                code: '123',
+            };
+
+            rentRepositoryMock.findById.mockResolvedValue(rent);
+
             const updateRentDto: UpdateRentDto = {
                 lockerId: '456',
                 weight: 7,

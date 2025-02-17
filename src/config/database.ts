@@ -7,7 +7,7 @@ const dbURI: string = config.get<string>('db.uri');
 const connectDB = async (): Promise<void> => {
     try {
         await mongoose.connect(dbURI);
-        logger.info(`✅ Connected to MongoDB at ${dbURI}`);
+        logger.info('✅ Connected to MongoDB');
     } catch (error) {
         logger.error('❌ MongoDB connection error:', error);
         throw new Error('MongoDB connection failed');

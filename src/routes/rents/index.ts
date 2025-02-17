@@ -30,7 +30,7 @@ router.get(
 
 router.get('/:id', (request: CustomRequest, response: Response, next: NextFunction) => {
     const controller = container.resolve(RentController);
-    controller.findRentById(request?.params?.id, response, next);
+    controller.findRentById(request?.params?.id, request, response, next);
 });
 
 router.get(
@@ -47,13 +47,13 @@ router.patch(
     bodyValidationMiddleware(SetRentLockerDto),
     (request: CustomRequest, response: Response, next: NextFunction) => {
         const controller = container.resolve(RentController);
-        controller.setLockerId(request?.params?.id, request.body, response, next);
+        controller.setLockerId(request?.params?.id, request.body, request, response, next);
     }
 );
 
 router.patch('/:id/dropoff', (request: CustomRequest, response: Response, next: NextFunction) => {
     const controller = container.resolve(RentController);
-    controller.dropoffRent(request?.params?.id, response, next);
+    controller.dropoffRent(request?.params?.id, request, response, next);
 });
 
 router.patch('/:id/pickup/:code', (request: CustomRequest, response: Response, next: NextFunction) => {
@@ -66,7 +66,7 @@ router.patch(
     bodyValidationMiddleware(UpdateRentDto),
     (request: CustomRequest, response: Response, next: NextFunction) => {
         const controller = container.resolve(RentController);
-        controller.updateRent(request?.params?.id, request.body, response, next);
+        controller.updateRent(request?.params?.id, request.body, request, response, next);
     }
 );
 

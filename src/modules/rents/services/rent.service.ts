@@ -1,6 +1,6 @@
-import { inject, injectable } from 'tsyringe';
-import { RentRepository } from '../repositories';
-import { CreateRentDto, UpdateRentDto } from '../dtos';
+import {inject, injectable} from 'tsyringe';
+import {RentRepository} from '../repositories';
+import {CreateRentDto, UpdateRentDto} from '../dtos';
 import {
     BadRequestError,
     ForbiddenError,
@@ -9,11 +9,13 @@ import {
     NotFoundError,
 } from '../../../utils/http-error.util';
 import logger from '../../../utils/logger.util';
-import { RentStatus } from '../enums';
-import { generateCode } from '../../../utils/general.utils';
-import { EmailService } from '../../internal/emails/services';
-import { LockerService } from '../../lockers/services';
-import { LockerStatus } from '../../lockers/enums';
+import {RentStatus} from '../enums';
+import {generateCode} from '../../../utils/general.utils';
+import {EmailService} from '../../internal/emails/services';
+import {LockerService} from '../../lockers/services';
+import {LockerStatus} from '../../lockers/enums';
+import {UserFromRequest} from "../../general/interfaces";
+import {UserRole} from "../../users/enums";
 
 @injectable()
 export class RentService {
@@ -33,12 +35,16 @@ export class RentService {
         }
     }
 
-    async findRentById(id: string) {
+    async findRentById(id: string, user?: UserFromRequest) {
         try {
             const rent = await this.rentRepository.findById(id);
 
             if (!rent) {
                 throw new NotFoundError('Rent not found');
+            }
+
+            if (user && rent.senderEmail !== user.email && user.role !== UserRole.OPERATIONS_USER) {
+                throw new ForbiddenError('You are not authorized to view this rent');
             }
 
             return rent;
@@ -71,8 +77,14 @@ export class RentService {
         }
     }
 
-    async updateRent(id: string, updateRentDto: UpdateRentDto) {
+    async updateRent(id: string, updateRentDto: UpdateRentDto, user?: UserFromRequest) {
         try {
+            const rent = await this.findRentById(id);
+
+            if (user && rent.senderEmail !== user.email && user.role !== UserRole.OPERATIONS_USER) {
+                throw new ForbiddenError('You are not authorized to view this rent');
+            }
+
             if (updateRentDto.lockerId) {
                 const locker = await this.lockerService.findLockerById(updateRentDto.lockerId);
 
@@ -93,9 +105,14 @@ export class RentService {
         }
     }
 
-    async setLockerId(id: string, lockerId: string) {
+    async setLockerId(id: string, lockerId: string, user?: UserFromRequest) {
         try {
-            await this.findRentById(id);
+            const rent = await this.findRentById(id);
+
+            if (user && rent.senderEmail !== user.email && user.role !== UserRole.OPERATIONS_USER) {
+                throw new ForbiddenError('You are not authorized to view this rent');
+            }
+
             const locker = await this.lockerService.findLockerById(lockerId);
 
             if (locker.isOccupied) {
@@ -114,9 +131,13 @@ export class RentService {
         }
     }
 
-    async dropoffRent(id: string) {
+    async dropoffRent(id: string, user?: UserFromRequest) {
         try {
             const rent = await this.findRentById(id);
+
+            if (user && rent.senderEmail !== user.email && user.role !== UserRole.OPERATIONS_USER) {
+                throw new ForbiddenError('You are not authorized to view this rent');
+            }
 
             if (!rent.lockerId) {
                 throw new BadRequestError('Rent does not have a locker assigned');
