@@ -1,4 +1,4 @@
-This app simulates a simple locker system that allows user to drop and pick up items.
+This app simulates a simple locker system that allows users to drop and pick up items.
 
 ## We have different modules:
 - bloq - each bloq contains one or more lockers
