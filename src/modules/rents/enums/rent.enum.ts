@@ -1,11 +1,3 @@
-export enum RentSize {
-    XS = 'XS',
-    S = 'S',
-    M = 'M',
-    L = 'L',
-    XL = 'XL',
-}
-
 export enum RentStatus {
     CREATED = 'CREATED',
     WAITING_DROPOFF = 'WAITING_DROPOFF',

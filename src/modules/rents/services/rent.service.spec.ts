@@ -2,25 +2,40 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import { RentService } from './rent.service';
 import { RentRepository } from '../repositories';
 import { CreateRentDto, UpdateRentDto } from '../dtos';
-import { RentSize, RentStatus } from '../enums';
+import { RentStatus } from '../enums';
 import { Rent } from '../models';
 import { EmailService } from '../../internal/emails/services';
 import { LockerService } from '../../lockers/services';
 import { LockerStatus } from '../../lockers/enums';
 import { Locker } from '../../lockers/models';
 import { BadRequestError, InternalServerError } from '../../../utils/http-error.util';
+import { Size } from '../../general/enums/size.enum';
+import { BloqService } from '../../bloqs/services';
+import { UserFromRequest } from '../../general/interfaces';
+import { UserRole } from '../../users/enums';
+import { Country } from '../../general/enums/country.enum';
+import mongoose from 'mongoose';
 
 describe('RentService', () => {
     let rentService: RentService;
     let rentRepositoryMock: MockProxy<RentRepository>;
     let emailServiceMock: MockProxy<EmailService>;
     let lockerServiceMock: MockProxy<LockerService>;
+    let bloqServiceMock: MockProxy<BloqService>;
+
+    const userFromRequest: UserFromRequest = {
+        email: 'p@mail.com',
+        role: UserRole.OPERATIONS_USER,
+        country: Country.FRANCE,
+        id: '123',
+    };
 
     beforeEach(() => {
         rentRepositoryMock = mock<RentRepository>();
         emailServiceMock = mock<EmailService>();
         lockerServiceMock = mock<LockerService>();
-        rentService = new RentService(rentRepositoryMock, emailServiceMock, lockerServiceMock);
+        bloqServiceMock = mock<BloqService>();
+        rentService = new RentService(rentRepositoryMock, emailServiceMock, lockerServiceMock, bloqServiceMock);
     });
 
     afterEach(() => {
@@ -33,14 +48,17 @@ describe('RentService', () => {
             const createRentDto: CreateRentDto = {
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
                 code: '123',
             };
             rentRepositoryMock.createRent.mockResolvedValue({ _id: '123', ...createRentDto } as unknown as Rent);
+            bloqServiceMock.assignBloqAndLocker.mockResolvedValue('456');
 
-            const result = await rentService.createRent(createRentDto);
+            rentRepositoryMock.setLockerId.mockResolvedValue({ _id: '123', ...createRentDto } as unknown as Rent);
+
+            const result = await rentService.createRent(createRentDto, userFromRequest);
 
             expect(result).toEqual({ _id: '123', ...createRentDto });
         });
@@ -49,22 +67,25 @@ describe('RentService', () => {
             const createRentDto: CreateRentDto = {
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
             };
             rentRepositoryMock.createRent.mockRejectedValue(new Error('Test Error'));
 
-            await expect(rentService.createRent(createRentDto)).rejects.toThrow(new InternalServerError('Test Error'));
+            await expect(rentService.createRent(createRentDto, userFromRequest)).rejects.toThrow(
+                new InternalServerError('Test Error')
+            );
         });
     });
 
     describe('findRentById', () => {
         it('should find a rent by id', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.CREATED,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -89,9 +110,10 @@ describe('RentService', () => {
         it('should find all rents', async () => {
             const rents: Rent[] = [
                 {
+                    _id: new mongoose.Types.ObjectId(),
                     lockerId: '456',
                     weight: 7,
-                    size: RentSize.M,
+                    size: Size.M,
                     status: RentStatus.CREATED,
                     senderEmail: 'sender@mail.com',
                     receiverEmail: 'receiver@mail.com',
@@ -117,9 +139,10 @@ describe('RentService', () => {
         it('should find all rents by locker id', async () => {
             const rents: Rent[] = [
                 {
+                    _id: new mongoose.Types.ObjectId(),
                     lockerId: '456',
                     weight: 7,
-                    size: RentSize.M,
+                    size: Size.M,
                     status: RentStatus.CREATED,
                     senderEmail: 'sender@mail.com',
                     receiverEmail: 'receiver@mail.com',
@@ -144,9 +167,10 @@ describe('RentService', () => {
     describe('updateRent', () => {
         it('should update a rent', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_DROPOFF,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -158,7 +182,7 @@ describe('RentService', () => {
             const updateRentDto: UpdateRentDto = {
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.CREATED,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -178,9 +202,10 @@ describe('RentService', () => {
 
         it('should throw an error if the rent update fails', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_DROPOFF,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -192,7 +217,7 @@ describe('RentService', () => {
             const updateRentDto: UpdateRentDto = {
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.CREATED,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -214,9 +239,10 @@ describe('RentService', () => {
     describe('dropoffRent', () => {
         it('should dropoff a rent', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_DROPOFF,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -233,9 +259,10 @@ describe('RentService', () => {
 
         it('should throw an error if the rent dropoff fails', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_DROPOFF,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -250,8 +277,9 @@ describe('RentService', () => {
 
         it('should throw a bad request error if rent does not have lockerId', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_DROPOFF,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -268,9 +296,10 @@ describe('RentService', () => {
 
         it('should throw a bad request error if rent status is not waiting dropoff', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.CREATED,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -289,9 +318,10 @@ describe('RentService', () => {
     describe('pickupRent', () => {
         it('should pickup a rent', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_PICKUP,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -301,16 +331,17 @@ describe('RentService', () => {
             rentRepositoryMock.findById.mockResolvedValue(rent);
             rentRepositoryMock.pickupRent.mockResolvedValue();
 
-            const result = await rentService.pickupRent('123', '123');
+            const result = await rentService.pickupRent('123', '123', userFromRequest);
 
             expect(result).toBeUndefined();
         });
 
         it('should throw an error if the rent pickup fails', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_PICKUP,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -320,13 +351,14 @@ describe('RentService', () => {
             rentRepositoryMock.findById.mockResolvedValue(rent);
             rentRepositoryMock.pickupRent.mockRejectedValue(new Error('Test Error'));
 
-            await expect(rentService.pickupRent('123', '123')).rejects.toThrow(new InternalServerError('Test Error'));
+            await expect(rentService.pickupRent('123', '123', userFromRequest)).rejects.toThrow(new InternalServerError('Test Error'));
         });
 
         it('should throw a bad request error if the rent does not have lockerId', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_PICKUP,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -336,16 +368,17 @@ describe('RentService', () => {
             rentRepositoryMock.findById.mockResolvedValue(rent);
             rentRepositoryMock.pickupRent.mockResolvedValue();
 
-            await expect(rentService.pickupRent('123', '123')).rejects.toThrow(
+            await expect(rentService.pickupRent('123', '123', userFromRequest)).rejects.toThrow(
                 new BadRequestError('Rent does not have a locker assigned')
             );
         });
 
         it('should throw a bad request error if the rent is not in pick up status', async () => {
             const rent: Rent = {
+                _id: new mongoose.Types.ObjectId(),
                 lockerId: '456',
                 weight: 7,
-                size: RentSize.M,
+                size: Size.M,
                 status: RentStatus.WAITING_DROPOFF,
                 senderEmail: 'send@mail.com',
                 receiverEmail: 'receiver@mail.com',
@@ -355,7 +388,7 @@ describe('RentService', () => {
             rentRepositoryMock.findById.mockResolvedValue(rent);
             rentRepositoryMock.pickupRent.mockResolvedValue();
 
-            await expect(rentService.pickupRent('123', '123')).rejects.toThrow(
+            await expect(rentService.pickupRent('123', '123', userFromRequest)).rejects.toThrow(
                 new BadRequestError('Rent is not in pickup status')
             );
         });

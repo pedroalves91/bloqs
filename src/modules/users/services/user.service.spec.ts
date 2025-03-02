@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../interfaces';
 import { ConflictError, InternalServerError, UnauthorizedError } from '../../../utils/http-error.util';
 import { CreateUserDto } from '../dtos';
+import { Country } from '../../general/enums/country.enum';
 
 jest.mock('bcrypt', () => ({
     hash: jest.fn(),
@@ -41,6 +42,7 @@ describe('UserService', () => {
                 email: 'test@example.com',
                 password: 'hashedPassword',
                 role: UserRole.REGULAR_USER,
+                country: Country.FRANCE,
             };
 
             userRepositoryMock.findByEmail.mockResolvedValue(null);
@@ -49,6 +51,7 @@ describe('UserService', () => {
                 email: 'test@example.com',
                 password: 'hashedPassword',
                 role: UserRole.REGULAR_USER,
+                country: Country.FRANCE,
             } as unknown as User);
 
             (jwt.sign as jest.Mock).mockReturnValue('jwtToken');
@@ -65,12 +68,14 @@ describe('UserService', () => {
                 email: 'test@example.com',
                 password: 'password',
                 role: UserRole.REGULAR_USER,
+                country: Country.FRANCE,
             };
 
             userRepositoryMock.findByEmail.mockResolvedValue({
                 _id: '123',
                 email: 'test@example.com',
                 password: 'hashedPassword',
+                country: Country.FRANCE,
             } as unknown as User);
 
             await expect(userService.createUser(createUserDto)).rejects.toThrow(
@@ -87,6 +92,7 @@ describe('UserService', () => {
                 email: 'test@example.com',
                 password: 'password',
                 role: UserRole.REGULAR_USER,
+                country: Country.FRANCE,
             };
 
             userRepositoryMock.findByEmail.mockRejectedValue(new Error('Error creating user'));
@@ -139,6 +145,7 @@ describe('UserService', () => {
                 email: 'test@example.com',
                 password: 'password',
                 role: UserRole.REGULAR_USER,
+                country: Country.FRANCE,
             };
             userRepositoryMock.findByEmail.mockResolvedValue(user as unknown as User);
 

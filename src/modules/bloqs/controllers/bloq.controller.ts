@@ -25,7 +25,7 @@ export class BloqController {
     ): Promise<void> {
         try {
             logger.info(`Creating bloq in address: ${bloqData.address}`);
-            const bloq = await this.bloqService.createBloq(bloqData.title, bloqData.address);
+            const bloq = await this.bloqService.createBloq(bloqData.title, bloqData.address, bloqData.country);
 
             response.status(StatusCodes.CREATED).json(bloq);
         } catch (internalError) {

@@ -1,5 +1,6 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsStrongPassword, MinLength } from 'class-validator';
 import { UserRole } from '../enums';
+import { Country } from '../../general/enums/country.enum';
 
 export class CreateUserDto {
     @IsString()
@@ -18,4 +19,8 @@ export class CreateUserDto {
     @IsEnum(UserRole, { message: `Role must be a valid enum value: ${Object.values(UserRole)}` })
     @IsOptional()
     role?: UserRole;
+
+    @IsEnum(Country, { message: `Country must be a valid enum value: ${Object.values(Country)}` })
+    @IsNotEmpty({ message: 'Country is required' })
+    country?: Country;
 }

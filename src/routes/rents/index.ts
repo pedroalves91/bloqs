@@ -2,7 +2,7 @@ import { NextFunction, Response, Router } from 'express';
 import { allowedUserRolesGuard, bodyValidationMiddleware, jwtGuardMiddleware } from '../../middlewares';
 import { CustomRequest } from '../../modules/general/interfaces';
 import { container } from 'tsyringe';
-import { CreateRentDto, SetRentLockerDto, UpdateRentDto } from '../../modules/rents/dtos';
+import { CreateRentDto, UpdateRentDto } from '../../modules/rents/dtos';
 import { RentController } from '../../modules/rents/controllers';
 import { UserRole } from '../../modules/users/enums';
 
@@ -15,7 +15,7 @@ router.post(
     bodyValidationMiddleware(CreateRentDto),
     (request: CustomRequest, response: Response, next: NextFunction) => {
         const controller = container.resolve(RentController);
-        controller.createRent(request.body, response, next);
+        controller.createRent(request.body, request, response, next);
     }
 );
 
@@ -39,15 +39,6 @@ router.get(
     (request: CustomRequest, response: Response, next: NextFunction) => {
         const controller = container.resolve(RentController);
         controller.findRentsByLockerId(request?.params?.lockerId, response, next);
-    }
-);
-
-router.patch(
-    '/:id/locker',
-    bodyValidationMiddleware(SetRentLockerDto),
-    (request: CustomRequest, response: Response, next: NextFunction) => {
-        const controller = container.resolve(RentController);
-        controller.setLockerId(request?.params?.id, request.body, request, response, next);
     }
 );
 

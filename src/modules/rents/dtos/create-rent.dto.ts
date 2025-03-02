@@ -1,5 +1,5 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import { RentSize } from '../enums';
+import { Size } from '../../general/enums/size.enum';
 
 export class CreateRentDto {
     @IsString()
@@ -10,9 +10,9 @@ export class CreateRentDto {
     @IsNotEmpty({ message: 'Weight is required' })
     weight: number;
 
-    @IsEnum(RentSize, { message: `Size must be a valid enum value: ${Object.values(RentSize)}` })
+    @IsEnum(Size, { message: `Size must be a valid enum value: ${Object.values(Size)}` })
     @IsNotEmpty({ message: 'Size is required' })
-    size: RentSize;
+    size: Size;
 
     @IsEmail()
     @IsNotEmpty({ message: 'Sender email is required' })

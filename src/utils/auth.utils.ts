@@ -8,11 +8,11 @@ export const parseBearer = (header: string): string => {
     return token;
 };
 
-export const verifyToken = async (token: string): Promise<JwtPayload> => {
+export const verifyToken = (token: string): JwtPayload => {
     const secretKey: string = config.get<string>('jwt.secret');
 
     try {
-        const payload = await jwt.verify(token, secretKey);
+        const payload = jwt.verify(token, secretKey);
         return payload as JwtPayload;
     } catch (error) {
         if (error instanceof jwt.TokenExpiredError) {

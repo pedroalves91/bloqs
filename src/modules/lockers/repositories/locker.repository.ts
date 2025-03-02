@@ -1,6 +1,8 @@
 import { injectable } from 'tsyringe';
 import { Locker, LockerModel } from '../models';
 import { CreateLockerDto, UpdateLockerDto } from '../dtos';
+import { LockerStatus } from '../enums';
+import { Size } from '../../general/enums/size.enum';
 
 @injectable()
 export class LockerRepository {
@@ -18,6 +20,10 @@ export class LockerRepository {
 
     async findAll(): Promise<Locker[]> {
         return LockerModel.find().lean();
+    }
+
+    async findAvailableLockersByBloqIdAndSize(bloqId: string, size: Size): Promise<Locker[]> {
+        return LockerModel.find({ bloqId, isOccupied: false, status: LockerStatus.OPEN, size }).lean();
     }
 
     async updateLocker(id: string, updateLockerDto: UpdateLockerDto): Promise<Locker | null> {

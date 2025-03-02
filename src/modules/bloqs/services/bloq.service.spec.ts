@@ -3,14 +3,18 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import { BloqRepository } from '../repository';
 import { Bloq } from '../models';
 import { InternalServerError } from '../../../utils/http-error.util';
+import { Country } from '../../general/enums/country.enum';
+import { LockerService } from '../../lockers/services';
 
 describe('BloqService', () => {
     let bloqService: BloqService;
     let bloqRepositoryMock: MockProxy<BloqRepository>;
+    let lockerServiceMock: MockProxy<LockerService>;
 
     beforeEach(() => {
         bloqRepositoryMock = mock<BloqRepository>();
-        bloqService = new BloqService(bloqRepositoryMock);
+        lockerServiceMock = mock<LockerService>();
+        bloqService = new BloqService(bloqRepositoryMock, lockerServiceMock);
     });
 
     afterEach(() => {
@@ -24,17 +28,23 @@ describe('BloqService', () => {
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
 
-            const result = await bloqService.createBloq('Test Bloq', 'Test Address');
+            const result = await bloqService.createBloq('Test Bloq', 'Test Address', Country.FRANCE);
 
-            expect(result).toEqual({ _id: '123', title: 'Test Bloq', address: 'Test Address' });
+            expect(result).toEqual({
+                _id: '123',
+                title: 'Test Bloq',
+                address: 'Test Address',
+                country: Country.FRANCE,
+            });
         });
 
         it('should throw an error if the bloq creation fails', async () => {
             bloqRepositoryMock.createBloq.mockRejectedValue(new Error('Test Error'));
 
-            await expect(bloqService.createBloq('Test Bloq', 'Test Address')).rejects.toThrow(
+            await expect(bloqService.createBloq('Test Bloq', 'Test Address', Country.FRANCE)).rejects.toThrow(
                 new InternalServerError('Test Error')
             );
         });
@@ -46,11 +56,17 @@ describe('BloqService', () => {
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
 
             const result = await bloqService.findBloqById('123');
 
-            expect(result).toEqual({ _id: '123', title: 'Test Bloq', address: 'Test Address' });
+            expect(result).toEqual({
+                _id: '123',
+                title: 'Test Bloq',
+                address: 'Test Address',
+                country: Country.FRANCE,
+            });
         });
 
         it('should throw an error if the bloq search fails', async () => {
@@ -63,12 +79,14 @@ describe('BloqService', () => {
     describe('findAllBloqs', () => {
         it('should find all bloqs', async () => {
             bloqRepositoryMock.findAll.mockResolvedValue([
-                { _id: '123', title: 'Test Bloq', address: 'Test Address' },
+                { _id: '123', title: 'Test Bloq', address: 'Test Address', country: Country.FRANCE },
             ] as unknown as Bloq[]);
 
             const result = await bloqService.findAllBloqs();
 
-            expect(result).toEqual([{ _id: '123', title: 'Test Bloq', address: 'Test Address' }]);
+            expect(result).toEqual([
+                { _id: '123', title: 'Test Bloq', address: 'Test Address', country: Country.FRANCE },
+            ]);
         });
 
         it('should throw an error if the bloq search fails', async () => {
@@ -84,16 +102,27 @@ describe('BloqService', () => {
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
             bloqRepositoryMock.updateBloq.mockResolvedValue({
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
 
-            const result = await bloqService.updateBloq('123', { title: 'Test Bloq', address: 'Test Address' });
+            const result = await bloqService.updateBloq('123', {
+                title: 'Test Bloq',
+                address: 'Test Address',
+                country: Country.FRANCE,
+            });
 
-            expect(result).toEqual({ _id: '123', title: 'Test Bloq', address: 'Test Address' });
+            expect(result).toEqual({
+                _id: '123',
+                title: 'Test Bloq',
+                address: 'Test Address',
+                country: Country.FRANCE,
+            });
         });
 
         it('should throw an error if the bloq update fails', async () => {
@@ -101,11 +130,12 @@ describe('BloqService', () => {
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
             bloqRepositoryMock.updateBloq.mockRejectedValue(new Error('Test Error'));
 
             await expect(
-                bloqService.updateBloq('123', { title: 'Test Bloq', address: 'Test Address' })
+                bloqService.updateBloq('123', { title: 'Test Bloq', address: 'Test Address', country: Country.FRANCE })
             ).rejects.toThrow(new InternalServerError('Test Error'));
         });
     });
@@ -116,16 +146,23 @@ describe('BloqService', () => {
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
             bloqRepositoryMock.deleteBloq.mockResolvedValue({
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
 
             const result = await bloqService.deleteBloq('123');
 
-            expect(result).toEqual({ _id: '123', title: 'Test Bloq', address: 'Test Address' });
+            expect(result).toEqual({
+                _id: '123',
+                title: 'Test Bloq',
+                address: 'Test Address',
+                country: Country.FRANCE,
+            });
         });
 
         it('should throw an error if the bloq deletion fails', async () => {
@@ -133,6 +170,7 @@ describe('BloqService', () => {
                 _id: '123',
                 title: 'Test Bloq',
                 address: 'Test Address',
+                country: Country.FRANCE,
             } as unknown as Bloq);
             bloqRepositoryMock.deleteBloq.mockRejectedValue(new Error('Test Error'));
 

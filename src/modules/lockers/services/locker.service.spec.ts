@@ -5,6 +5,7 @@ import { LockerStatus } from '../enums';
 import { Locker } from '../models';
 import { CreateLockerDto } from '../dtos';
 import { InternalServerError } from '../../../utils/http-error.util';
+import { Size } from '../../general/enums/size.enum';
 
 describe('LockerService', () => {
     let lockerService: LockerService;
@@ -25,23 +26,26 @@ describe('LockerService', () => {
             const lockerDto: CreateLockerDto = {
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             };
 
             lockerRepositoryMock.createLocker.mockResolvedValue({
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
 
             const result = await lockerService.createLocker(lockerDto);
 
-            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN });
+            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M });
         });
 
         it('should throw an error if the locker creation fails', async () => {
             const lockerDto: CreateLockerDto = {
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             };
 
             lockerRepositoryMock.createLocker.mockRejectedValue(new Error('Test Error'));
@@ -56,11 +60,12 @@ describe('LockerService', () => {
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
 
             const result = await lockerService.findLockerById('123');
 
-            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN });
+            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M });
         });
 
         it('should throw an error if the locker search fails', async () => {
@@ -73,12 +78,12 @@ describe('LockerService', () => {
     describe('findLockersByBloqId', () => {
         it('should find lockers by bloqId', async () => {
             lockerRepositoryMock.findByBloqId.mockResolvedValue([
-                { _id: '123', bloqId: '456', status: LockerStatus.OPEN },
+                { _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M },
             ] as unknown as Locker[]);
 
             const result = await lockerService.findLockersByBloqId('456');
 
-            expect(result).toEqual([{ _id: '123', bloqId: '456', status: LockerStatus.OPEN }]);
+            expect(result).toEqual([{ _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M }]);
         });
 
         it('should throw an error if the locker search fails', async () => {
@@ -93,12 +98,12 @@ describe('LockerService', () => {
     describe('findAllLockers', () => {
         it('should find all lockers', async () => {
             lockerRepositoryMock.findAll.mockResolvedValue([
-                { _id: '123', bloqId: '456', status: LockerStatus.OPEN },
+                { _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M },
             ] as unknown as Locker[]);
 
             const result = await lockerService.findAllLockers();
 
-            expect(result).toEqual([{ _id: '123', bloqId: '456', status: LockerStatus.OPEN }]);
+            expect(result).toEqual([{ _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M }]);
         });
 
         it('should throw an error if the locker search fails', async () => {
@@ -114,16 +119,18 @@ describe('LockerService', () => {
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
             lockerRepositoryMock.updateLocker.mockResolvedValue({
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
 
             const result = await lockerService.updateLocker('123', { status: LockerStatus.CLOSED });
 
-            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN });
+            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M });
         });
 
         it('should throw an error if the locker update fails', async () => {
@@ -131,6 +138,7 @@ describe('LockerService', () => {
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
             lockerRepositoryMock.updateLocker.mockRejectedValue(new Error('Test Error'));
 
@@ -146,16 +154,18 @@ describe('LockerService', () => {
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
             lockerRepositoryMock.deleteLocker.mockResolvedValue({
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
 
             const result = await lockerService.deleteLocker('123');
 
-            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN });
+            expect(result).toEqual({ _id: '123', bloqId: '456', status: LockerStatus.OPEN, size: Size.M });
         });
 
         it('should throw an error if the locker deletion fails', async () => {
@@ -163,6 +173,7 @@ describe('LockerService', () => {
                 _id: '123',
                 bloqId: '456',
                 status: LockerStatus.OPEN,
+                size: Size.M,
             } as unknown as Locker);
             lockerRepositoryMock.deleteLocker.mockRejectedValue(new Error('Test Error'));
 

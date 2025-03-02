@@ -1,5 +1,6 @@
 import { IsEmail, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-import { RentSize, RentStatus } from '../enums';
+import { RentStatus } from '../enums';
+import { Size } from '../../general/enums/size.enum';
 
 export class UpdateRentDto {
     @IsString()
@@ -10,9 +11,9 @@ export class UpdateRentDto {
     @IsOptional()
     weight?: number;
 
-    @IsEnum(RentSize, { message: `Size must be a valid enum value: ${Object.values(RentSize)}` })
+    @IsEnum(Size, { message: `Size must be a valid enum value: ${Object.values(Size)}` })
     @IsOptional()
-    size?: RentSize;
+    size?: Size;
 
     @IsEnum(RentStatus, { message: `Status must be a valid enum value: ${Object.values(RentStatus)}` })
     @IsOptional()

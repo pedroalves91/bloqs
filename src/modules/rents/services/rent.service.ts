@@ -16,18 +16,28 @@ import { LockerService } from '../../lockers/services';
 import { LockerStatus } from '../../lockers/enums';
 import { UserFromRequest } from '../../general/interfaces';
 import { UserRole } from '../../users/enums';
+import { BloqService } from '../../bloqs/services';
 
 @injectable()
 export class RentService {
     constructor(
         @inject(RentRepository) private rentRepository: RentRepository,
         @inject(EmailService) private readonly emailService: EmailService,
-        @inject(LockerService) private readonly lockerService: LockerService
+        @inject(LockerService) private readonly lockerService: LockerService,
+        @inject(BloqService) private readonly bloqService: BloqService
     ) {}
 
-    async createRent(createRentDto: CreateRentDto) {
+    async createRent(createRentDto: CreateRentDto, user: UserFromRequest) {
         try {
-            return await this.rentRepository.createRent(createRentDto);
+            const rent = await this.rentRepository.createRent(createRentDto);
+
+            const lockerId = await this.bloqService.assignBloqAndLocker(rent, user.country);
+
+            const updatedRent = await this.rentRepository.setLockerId(rent._id.toString(), lockerId);
+
+            await this.lockerService.updateLocker(lockerId, { status: LockerStatus.CLOSED });
+
+            return updatedRent;
         } catch (error: any) {
             GeneralError.assessError(error);
             logger.error(`Error creating rent: ${error.message}`);
@@ -105,32 +115,6 @@ export class RentService {
         }
     }
 
-    async setLockerId(id: string, lockerId: string, user?: UserFromRequest) {
-        try {
-            const rent = await this.findRentById(id);
-
-            if (user && rent.senderEmail !== user.email && user.role !== UserRole.OPERATIONS_USER) {
-                throw new ForbiddenError('You are not authorized to view this rent');
-            }
-
-            const locker = await this.lockerService.findLockerById(lockerId);
-
-            if (locker.isOccupied) {
-                throw new BadRequestError('Locker is already occupied');
-            }
-
-            if (locker.status !== LockerStatus.OPEN) {
-                throw new BadRequestError('Locker is not open');
-            }
-
-            return await this.rentRepository.setLockerId(id, lockerId);
-        } catch (error: any) {
-            GeneralError.assessError(error);
-            logger.error(`Error setting locker id: ${error.message}`);
-            throw new InternalServerError(error.message);
-        }
-    }
-
     async dropoffRent(id: string, user?: UserFromRequest) {
         try {
             const rent = await this.findRentById(id);
@@ -150,7 +134,7 @@ export class RentService {
             const randomCode = generateCode();
             await this.rentRepository.dropoffRent(id, randomCode);
 
-            await this.lockerService.updateLocker(rent.lockerId, { isOccupied: true, status: LockerStatus.CLOSED });
+            await this.lockerService.updateLocker(rent.lockerId, { isOccupied: true });
 
             await this.emailService.sendRentDropoffEmail(rent.receiverEmail, rent.lockerId, randomCode);
         } catch (error: any) {
@@ -160,7 +144,7 @@ export class RentService {
         }
     }
 
-    async pickupRent(id: string, code: string) {
+    async pickupRent(id: string, code: string, user: UserFromRequest) {
         try {
             const rent = await this.findRentById(id);
 
@@ -170,6 +154,10 @@ export class RentService {
 
             if (rent.status !== RentStatus.WAITING_PICKUP) {
                 throw new ForbiddenError('Rent is not in pickup status');
+            }
+
+            if (rent.receiverEmail !== user.email && user.role !== UserRole.OPERATIONS_USER) {
+                throw new ForbiddenError('You are not authorized to update this rent');
             }
 
             this.validateRentCode(rent.code, code);

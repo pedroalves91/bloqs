@@ -2,7 +2,7 @@ import { Body, Get, Inject, Patch, Post, Response, Route, SuccessResponse, Tags 
 import { inject, injectable } from 'tsyringe';
 import { RentService } from '../services';
 import { StatusCodes } from 'http-status-codes';
-import { CreateRentDto, SetRentLockerDto, UpdateRentDto } from '../dtos';
+import { CreateRentDto, UpdateRentDto } from '../dtos';
 import { NextFunction } from 'express';
 import logger from '../../../utils/logger.util';
 import { CustomRequest } from '../../general/interfaces';
@@ -21,12 +21,14 @@ export class RentController {
     @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
     public async createRent(
         @Body() rentData: CreateRentDto,
+        @Inject() request: CustomRequest,
         @Inject() response,
         @Inject() next: NextFunction
     ): Promise<void> {
         try {
             logger.info(`Creating rent for locker: ${rentData.lockerId}`);
-            const rent = await this.rentService.createRent(rentData);
+            const user = request.user;
+            const rent = await this.rentService.createRent(rentData, user!);
 
             response.status(StatusCodes.CREATED).json(rent);
         } catch (internalError) {
@@ -107,27 +109,6 @@ export class RentController {
         }
     }
 
-    @Patch('/{id}/locker')
-    @SuccessResponse(StatusCodes.NO_CONTENT, 'Rent Updated')
-    @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
-    public async setLockerId(
-        id: string,
-        @Body() rentLocker: SetRentLockerDto,
-        @Inject() request: CustomRequest,
-        @Inject() response,
-        @Inject() next: NextFunction
-    ): Promise<void> {
-        try {
-            logger.info(`Setting locker id for rent with id: ${id}`);
-            const user = request.user;
-            await this.rentService.setLockerId(id, rentLocker.lockerId, user);
-
-            response.status(StatusCodes.NO_CONTENT).send();
-        } catch (internalError) {
-            next(internalError);
-        }
-    }
-
     @Patch('/{id}/dropoff')
     @SuccessResponse(StatusCodes.NO_CONTENT, 'Rent Updated')
     @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
@@ -151,10 +132,17 @@ export class RentController {
     @Patch('/{id}/pickup')
     @SuccessResponse(StatusCodes.NO_CONTENT, 'Rent Updated')
     @Response(StatusCodes.INTERNAL_SERVER_ERROR, 'Server error')
-    public async pickupRent(id: string, code: string, @Inject() response, @Inject() next: NextFunction): Promise<void> {
+    public async pickupRent(
+        id: string,
+        code: string,
+        @Inject() request: CustomRequest,
+        @Inject() response,
+        @Inject() next: NextFunction
+    ): Promise<void> {
         try {
             logger.info(`Picking up rent with id: ${id}`);
-            await this.rentService.pickupRent(id, code);
+            const user = request.user;
+            await this.rentService.pickupRent(id, code, user!);
 
             response.status(StatusCodes.NO_CONTENT).send();
         } catch (internalError) {

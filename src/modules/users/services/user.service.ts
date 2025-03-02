@@ -71,7 +71,7 @@ export class UserService {
     }
 
     private getToken(user: User) {
-        return jwt.sign({ id: user._id, email: user.email, role: user.role }, this.jwtSecret, {
+        return jwt.sign({ id: user._id, email: user.email, role: user.role, country: user.country }, this.jwtSecret, {
             expiresIn: '1h',
         });
     }

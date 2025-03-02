@@ -3,6 +3,7 @@ import { LockerRepository } from '../repositories';
 import { GeneralError, InternalServerError, NotFoundError } from '../../../utils/http-error.util';
 import logger from '../../../utils/logger.util';
 import { CreateLockerDto, UpdateLockerDto } from '../dtos';
+import { Size } from '../../general/enums/size.enum';
 
 @injectable()
 export class LockerService {
@@ -78,6 +79,16 @@ export class LockerService {
         } catch (error: any) {
             GeneralError.assessError(error);
             logger.error(`Error deleting locker: ${error.message}`);
+            throw new InternalServerError(error.message);
+        }
+    }
+
+    async findAvailableLockersByBloqIdAndSize(bloqId: string, size: Size) {
+        try {
+            return await this.lockerRepository.findAvailableLockersByBloqIdAndSize(bloqId, size);
+        } catch (error: any) {
+            GeneralError.assessError(error);
+            logger.error(`Error finding available lockers: ${error.message}`);
             throw new InternalServerError(error.message);
         }
     }

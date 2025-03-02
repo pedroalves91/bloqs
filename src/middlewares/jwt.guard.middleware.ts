@@ -26,7 +26,7 @@ export const jwtGuardMiddleware: RequestHandler = async (
             throw new UnauthorizedError('Invalid authorization format');
         }
 
-        const payload: JwtPayload = await verifyToken(accessToken);
+        const payload: JwtPayload = verifyToken(accessToken);
         if (!payload?.email) {
             throw new UnauthorizedError('Invalid token payload');
         }

@@ -1,8 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { UserRole } from '../modules/users/enums';
 import { ForbiddenError, UnauthorizedError } from '../utils/http-error.util';
 import { allowedUserRolesGuard } from './allowed-user-role.guard.middleware';
 import { CustomRequest } from '../modules/general/interfaces';
+import { Country } from '../modules/general/enums/country.enum';
 
 describe('allowedUserRolesGuard', () => {
     let mockRequest: Partial<CustomRequest>;
@@ -26,7 +27,7 @@ describe('allowedUserRolesGuard', () => {
     });
 
     it('should throw ForbiddenError if user has insufficient permissions', async () => {
-        mockRequest.user = { role: UserRole.REGULAR_USER };
+        mockRequest.user = { role: UserRole.REGULAR_USER, country: Country.FRANCE };
 
         const middleware = allowedUserRolesGuard([UserRole.OPERATIONS_USER]);
 
@@ -36,7 +37,7 @@ describe('allowedUserRolesGuard', () => {
     });
 
     it('should call next() if user has sufficient permissions', async () => {
-        mockRequest.user = { role: UserRole.OPERATIONS_USER };
+        mockRequest.user = { role: UserRole.OPERATIONS_USER, country: Country.FRANCE };
 
         const middleware = allowedUserRolesGuard([UserRole.OPERATIONS_USER, UserRole.REGULAR_USER]);
 
